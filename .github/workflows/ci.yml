@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - develop
+      - 'feature/**'
+      - 'release/**'
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  test-and-validate:
+    name: Test and validate
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Show PowerShell version
+        shell: pwsh
+        run: $PSVersionTable
+
+      - name: Ensure logs directory exists
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path .\logs -Force | Out-Null
+
+      - name: Install Pester
+        shell: pwsh
+        run: |
+          Install-Module -Name Pester -Force -SkipPublisherCheck -Scope CurrentUser
+
+      - name: Run tests
+        shell: pwsh
+        run: |
+          ./tools/run-tests.ps1 2>&1 | Tee-Object -FilePath .\logs\run-tests.log
+
+      - name: Check repository health
+        shell: pwsh
+        run: |
+          ./tools/check-repo-health.ps1 2>&1 | Tee-Object -FilePath .\logs\check-repo-health.log
+
+      - name: Upload logs on failure
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-logs
+          path: logs/

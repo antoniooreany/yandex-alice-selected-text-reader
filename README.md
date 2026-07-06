@@ -1,44 +1,31 @@
-## Release workflow
+# Yandex Alice Selected Text Reader
 
-This project uses Git Flow for development and release management.
+A browser automation project for sending selected text to Yandex Alice for reading or related voice-assisted workflows.
 
-### Branch roles
+This project uses AutoHotkey scripts to capture selected text and send it into the Alice-related workflow.
 
-- `main` — stable production-ready releases. Each completed release is merged here and tagged with a version.
-- `develop` — the main integration branch for completed feature work.
-- `feature/*` — isolated implementation branches for small, focused changes.
-- `release/*` — release preparation branches used to finalize versioned releases.
-- `hotfix/*` — urgent fixes for issues that must be patched directly from the current stable release.
+## Status
 
-### Release rules
+This project is under active development.
 
-- New work is developed in `feature/*` branches and merged into `develop`.
-- A release starts from `develop` using `git flow release start <version>`.
-- A release branch should contain only release-oriented changes: documentation updates, version notes, small fixes, and final validation.
-- A release is completed with `git flow release finish <version>`, which merges it into `main` and `develop` and creates the release tag.
-- Stable releases are pushed from `main`, and release tags should also be pushed to GitHub.
+Current development happens on `develop`. New work should be added through focused feature branches. Release work should only begin when the current feature set is actually ready.
 
-### Versioning
+## Development workflow
 
-This project uses semantic-style versioning:
+This repository follows a Gitflow-style workflow.
 
-- `MAJOR` — incompatible or breaking changes.
-- `MINOR` — backward-compatible new features or meaningful project improvements.
-- `PATCH` — small compatible fixes and corrections.
+- Ongoing feature work starts from `develop`.
+- Features should be implemented in dedicated feature branches.
+- Release branches should not be started prematurely.
+- The next real release should only be prepared after the current feature set is ready and validated.
 
-### Current release state
-
-- Current stable release: `0.1.0`
-- Next planned release: `0.2.0`
-
-### Typical workflow
+### Typical feature workflow
 
 ```powershell
-git checkout develop
+git switch develop
+git pull
 git flow feature start add-some-small-change
-
 # implement and validate the change
-
 git flow feature finish add-some-small-change
 git push origin develop
 ```
@@ -46,22 +33,84 @@ git push origin develop
 ### Typical release workflow
 
 ```powershell
-git checkout develop
+git switch develop
+git pull
 git flow release start 0.2.0
-
 # update CHANGELOG.md / README.md, run validation, make final release-only fixes
-
 git flow release finish 0.2.0
 git push origin main
 git push origin develop
 git push origin --tags
 ```
 
-### Validation before release
+## Testing and Validation
 
-Before finishing a release:
+Before committing changes or preparing a release, run the repository checks locally from the project root.
 
-- run `powershell -ExecutionPolicy Bypass -File .\tools\run-tests.ps1`
-- run `powershell -ExecutionPolicy Bypass -File .\tools\check-repo-health.ps1`
-- update `CHANGELOG.md`
-- confirm the working tree is clean
+### Run now
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\run-tests.ps1
+powershell -ExecutionPolicy Bypass -File .\tools\check-repo-health.ps1
+```
+
+These commands verify the current PowerShell tests and repository health checks.
+
+### Manual smoke test
+
+After automated checks pass, run the main AutoHotkey script and verify the primary user flow manually.
+
+```powershell
+Start-Process .\scripts\yandex-alice-read-selected.ahk
+```
+
+Suggested smoke-test flow:
+
+1. Open a page with selectable text in the browser.
+2. Select a short text fragment.
+3. Trigger the configured AutoHotkey action.
+4. Verify that the selected text is captured and passed into the intended Alice-related workflow.
+5. Repeat once with no selected text and confirm the script fails safely or does nothing unexpected.
+
+### Do not run now / example
+
+The following commands are examples for later workflow stages and should not be used as routine pre-commit validation commands:
+
+```powershell
+git flow release start 0.2.0
+git flow release finish 0.2.0
+```
+
+## AI assistant guidance
+
+Repository-specific AI instructions are stored in the following files:
+
+- `AGENTS.md` — primary shared instructions for all AI coding assistants.
+- `GEMINI.md` — Gemini-specific wrapper.
+- `CLAUDE.md` — Claude-specific wrapper.
+- `.github/copilot-instructions.md` — GitHub Copilot repository instructions.
+
+The main policy is simple:
+
+- commands intended for immediate execution must be clearly separated from example or future commands;
+- release-related commands must not be suggested as the next step unless repository state has been checked and the user explicitly wants release work now.
+
+## Documentation
+
+Important project documentation files:
+
+- `README.md` — project overview and workflow notes.
+- `CHANGELOG.md` — notable project changes.
+- `AGENTS.md` — repository rules for AI assistants.
+
+When documentation changes affect workflow or assistant behavior, related files should be updated together.
+
+## Versioning
+
+This project follows Semantic Versioning.
+
+Upcoming work should be tracked in `CHANGELOG.md` under `Unreleased` until an actual release is prepared.
+
+## License
+
+This project is licensed under the MIT License. See `LICENSE` for details.
