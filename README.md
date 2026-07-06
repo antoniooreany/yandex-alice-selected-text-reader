@@ -64,13 +64,25 @@ After automated checks pass, run the main AutoHotkey script and verify the prima
 Start-Process .\scripts\yandex-alice-read-selected.ahk
 ```
 
+### Hotkeys
+
+When `browser.exe` is the active window, the AutoHotkey script provides these shortcuts:
+
+- `F8` — show the help tooltip with available shortcuts.
+- `F9` — read the selected text using the primary mode.
+- `F10` — read the selected text using the fallback mode.
+
+Implementation note: the script opens the browser context menu with `Shift+F10`, then moves down to the configured menu item (`MAIN_MENU_INDEX` for the primary mode, `ALT_MENU_INDEX` for the fallback mode) before pressing Enter.
+
 Suggested smoke-test flow:
 
 1. Open a page with selectable text in the browser.
 2. Select a short text fragment.
-3. Trigger the configured AutoHotkey action.
+3. Press `F9` to test the primary mode.
 4. Verify that the selected text is captured and passed into the intended Alice-related workflow.
-5. Repeat once with no selected text and confirm the script fails safely or does nothing unexpected.
+5. Press `F10` to test the fallback mode.
+6. Repeat once with no selected text and confirm the script fails safely or does nothing unexpected.
+7. Optionally press `F8` and confirm the help tooltip appears.
 
 ### Do not run now / example
 
@@ -92,8 +104,8 @@ Repository-specific AI instructions are stored in the following files:
 
 The main policy is simple:
 
-- commands intended for immediate execution must be clearly separated from example or future commands;
-- release-related commands must not be suggested as the next step unless repository state has been checked and the user explicitly wants release work now.
+- Commands intended for immediate execution must be clearly separated from example or future commands.
+- Release-related commands must not be suggested as the next step unless repository state has been checked and the user explicitly wants release work now.
 
 ## Documentation
 
