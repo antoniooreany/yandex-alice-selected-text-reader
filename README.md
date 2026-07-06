@@ -1,67 +1,52 @@
-## Release workflow
+# Yandex Alice Selected Text Reader
 
-This project uses Git Flow for development and release management.
+A browser extension project for sending selected text to Yandex Alice for reading or voice-related workflows.
 
-### Branch roles
+## Status
 
-- `main` — stable production-ready releases. Each completed release is merged here and tagged with a version.
-- `develop` — the main integration branch for completed feature work.
-- `feature/*` — isolated implementation branches for small, focused changes.
-- `release/*` — release preparation branches used to finalize versioned releases.
-- `hotfix/*` — urgent fixes for issues that must be patched directly from the current stable release.
+This project is under active development.
 
-### Release rules
+Current development happens on `develop`. New work should be added through focused feature branches. Release work should only begin when the current feature set is actually ready.
 
-- New work is developed in `feature/*` branches and merged into `develop`.
-- A release starts from `develop` using `git flow release start <version>`.
-- A release branch should contain only release-oriented changes: documentation updates, version notes, small fixes, and final validation.
-- A release is completed with `git flow release finish <version>`, which merges it into `main` and `develop` and creates the release tag.
-- Stable releases are pushed from `main`, and release tags should also be pushed to GitHub.
+## Development workflow
 
-### Versioning
+This repository follows a Gitflow-style workflow.
 
-This project uses semantic-style versioning:
+- Ongoing feature work starts from `develop`.
+- Features should be implemented in dedicated feature branches.
+- Release branches should not be started prematurely.
+- The next real release should only be prepared after the current documentation work is complete.
 
-- `MAJOR` — incompatible or breaking changes.
-- `MINOR` — backward-compatible new features or meaningful project improvements.
-- `PATCH` — small compatible fixes and corrections.
+## AI assistant guidance
 
-### Current release state
+Repository-specific AI instructions are stored in the following files:
 
-- Current stable release: `0.1.0`
-- Next planned release: `0.2.0`
+- `AGENTS.md` — primary shared instructions for all AI coding assistants.
+- `GEMINI.md` — Gemini-specific wrapper.
+- `CLAUDE.md` — Claude-specific wrapper.
+- `.github/copilot-instructions.md` — GitHub Copilot repository instructions.
 
-### Typical workflow
+The main policy is simple:
 
-```powershell
-git checkout develop
-git flow feature start add-some-small-change
+- commands intended for immediate execution must be clearly separated from example or future commands;
+- release-related commands must not be suggested as the next step unless repository state has been checked and the user explicitly wants release work now.
 
-# implement and validate the change
+## Documentation
 
-git flow feature finish add-some-small-change
-git push origin develop
-```
+Important project documentation files:
 
-### Typical release workflow
+- `README.md` — project overview and workflow notes.
+- `CHANGELOG.md` — notable project changes.
+- `AGENTS.md` — repository rules for AI assistants.
 
-```powershell
-git checkout develop
-git flow release start 0.2.0
+When documentation changes affect workflow or assistant behavior, related files should be updated together.
 
-# update CHANGELOG.md / README.md, run validation, make final release-only fixes
+## Versioning
 
-git flow release finish 0.2.0
-git push origin main
-git push origin develop
-git push origin --tags
-```
+This project follows Semantic Versioning.
 
-### Validation before release
+Upcoming work should be tracked in `CHANGELOG.md` under `Unreleased` until an actual release is prepared.
 
-Before finishing a release:
+## License
 
-- run `powershell -ExecutionPolicy Bypass -File .\tools\run-tests.ps1`
-- run `powershell -ExecutionPolicy Bypass -File .\tools\check-repo-health.ps1`
-- update `CHANGELOG.md`
-- confirm the working tree is clean
+This project is licensed under the MIT License. See `LICENSE` for details.
