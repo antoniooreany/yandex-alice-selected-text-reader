@@ -56,6 +56,16 @@ powershell -ExecutionPolicy Bypass -File .\tools\check-repo-health.ps1
 
 These commands verify the current PowerShell tests and repository health checks.
 
+### One-command local start
+
+For a quick local development start, run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\start-dev.ps1
+```
+
+This command runs the automated checks and then starts the main AutoHotkey script for manual smoke testing.
+
 ### Manual smoke test
 
 After automated checks pass, run the main AutoHotkey script and verify the primary user flow manually.
