@@ -1,6 +1,8 @@
 # Yandex Alice Selected Text Reader
 
-A browser extension project for sending selected text to Yandex Alice for reading or voice-related workflows.
+A browser automation project for sending selected text to Yandex Alice for reading or related voice-assisted workflows.
+
+This project uses AutoHotkey scripts to capture selected text and send it into the Alice-related workflow.
 
 ## Status
 
@@ -15,7 +17,69 @@ This repository follows a Gitflow-style workflow.
 - Ongoing feature work starts from `develop`.
 - Features should be implemented in dedicated feature branches.
 - Release branches should not be started prematurely.
-- The next real release should only be prepared after the current documentation work is complete.
+- The next real release should only be prepared after the current feature set is ready and validated.
+
+### Typical feature workflow
+
+```powershell
+git switch develop
+git pull
+git flow feature start add-some-small-change
+# implement and validate the change
+git flow feature finish add-some-small-change
+git push origin develop
+```
+
+### Typical release workflow
+
+```powershell
+git switch develop
+git pull
+git flow release start 0.2.0
+# update CHANGELOG.md / README.md, run validation, make final release-only fixes
+git flow release finish 0.2.0
+git push origin main
+git push origin develop
+git push origin --tags
+```
+
+## Testing and Validation
+
+Before committing changes or preparing a release, run the repository checks locally from the project root.
+
+### Run now
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\run-tests.ps1
+powershell -ExecutionPolicy Bypass -File .\tools\check-repo-health.ps1
+```
+
+These commands verify the current PowerShell tests and repository health checks.
+
+### Manual smoke test
+
+After automated checks pass, run the main AutoHotkey script and verify the primary user flow manually.
+
+```powershell
+Start-Process .\scripts\yandex-alice-read-selected.ahk
+```
+
+Suggested smoke-test flow:
+
+1. Open a page with selectable text in the browser.
+2. Select a short text fragment.
+3. Trigger the configured AutoHotkey action.
+4. Verify that the selected text is captured and passed into the intended Alice-related workflow.
+5. Repeat once with no selected text and confirm the script fails safely or does nothing unexpected.
+
+### Do not run now / example
+
+The following commands are examples for later workflow stages and should not be used as routine pre-commit validation commands:
+
+```powershell
+git flow release start 0.2.0
+git flow release finish 0.2.0
+```
 
 ## AI assistant guidance
 
