@@ -31,6 +31,11 @@ jobs:
         run: |
           New-Item -ItemType Directory -Path .\logs -Force | Out-Null
 
+      - name: Install Pester
+        shell: pwsh
+        run: |
+          Install-Module -Name Pester -Force -SkipPublisherCheck -Scope CurrentUser
+
       - name: Run tests
         shell: pwsh
         run: |
