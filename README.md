@@ -1,61 +1,67 @@
-# Yandex Alice Selected Text Reader
+## Release workflow
 
-Проект для Windows, который помогает запускать озвучивание выделенного текста в Яндекс.Браузере через AutoHotkey.
+This project uses Git Flow for development and release management.
 
-## Возможности
+### Branch roles
 
-- F8 — подсказка по настройке.
-- F9 — основной режим озвучивания выделенного текста.
-- F10 — альтернативный режим для сайтов с другой позицией пункта меню.
-- Работа только в активном окне Яндекс.Браузера.
-- Базовое логирование в проекте.
-- Тесты структуры проекта через Pester.
+- `main` — stable production-ready releases. Each completed release is merged here and tagged with a version.
+- `develop` — the main integration branch for completed feature work.
+- `feature/*` — isolated implementation branches for small, focused changes.
+- `release/*` — release preparation branches used to finalize versioned releases.
+- `hotfix/*` — urgent fixes for issues that must be patched directly from the current stable release.
 
-## Требования
+### Release rules
 
-- Windows
-- Яндекс.Браузер
-- AutoHotkey v2
-- PowerShell 5.1+ или PowerShell 7+
-- Pester (для запуска тестов)
+- New work is developed in `feature/*` branches and merged into `develop`.
+- A release starts from `develop` using `git flow release start <version>`.
+- A release branch should contain only release-oriented changes: documentation updates, version notes, small fixes, and final validation.
+- A release is completed with `git flow release finish <version>`, which merges it into `main` and `develop` and creates the release tag.
+- Stable releases are pushed from `main`, and release tags should also be pushed to GitHub.
 
-## Быстрый старт
+### Versioning
 
-1. Установить AutoHotkey v2.
-2. Открыть `scripts/yandex-alice-read-selected.ahk`.
-3. При необходимости изменить:
-   - `MAIN_MENU_INDEX`
-   - `ALT_MENU_INDEX`
-4. Запустить AHK-скрипт.
-5. В Яндекс.Браузере выделить текст и проверить F9 / F10.
+This project uses semantic-style versioning:
 
-## Запуск тестов
+- `MAJOR` — incompatible or breaking changes.
+- `MINOR` — backward-compatible new features or meaningful project improvements.
+- `PATCH` — small compatible fixes and corrections.
+
+### Current release state
+
+- Current stable release: `0.1.0`
+- Next planned release: `0.2.0`
+
+### Typical workflow
 
 ```powershell
-.\tools\run-tests.ps1
+git checkout develop
+git flow feature start add-some-small-change
+
+# implement and validate the change
+
+git flow feature finish add-some-small-change
+git push origin develop
 ```
 
-## Логи
+### Typical release workflow
 
-Логи складываются в папку `logs/`.
+```powershell
+git checkout develop
+git flow release start 0.2.0
 
-## Структура проекта
+# update CHANGELOG.md / README.md, run validation, make final release-only fixes
 
-```text
-yandex-alice-selected-text-reader/
-├─ README.md
-├─ .gitignore
-├─ logs/
-│  └─ .gitkeep
-├─ scripts/
-│  └─ yandex-alice-read-selected.ahk
-├─ docs/
-│  ├─ notes.md
-│  └─ test-cases.md
-├─ tests/
-│  └─ project.tests.ps1
-└─ tools/
-   ├─ bootstrap-project.ps1
-   ├─ run-tests.ps1
-   └─ common.ps1
+git flow release finish 0.2.0
+git push origin main
+git push origin develop
+git push origin --tags
 ```
+
+### Validation before release
+
+Before finishing a release:
+
+- run `powershell -ExecutionPolicy Bypass -File .\tools\run-tests.ps1`
+- run `powershell -ExecutionPolicy Bypass -File .\tools\check-repo-health.ps1`
+- update `CHANGELOG.md`
+- confirm the working tree is clean
