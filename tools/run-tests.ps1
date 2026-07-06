@@ -1,26 +1,36 @@
-[CmdletBinding()]
-param()
-
-$ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
 
-. "$PSScriptRoot\common.ps1"
+Import-Module Pester -MinimumVersion 5.0.0 -Force
 
-try {
-    Write-ProjectLog -Level "INFO" -Message "Запуск run-tests.ps1"
+$ProjectRoot = Split-Path -Parent $PSScriptRoot
+$TestPath = Join-Path $ProjectRoot 'tests\project.tests.ps1'
 
-    if (-not (Get-Module -ListAvailable -Name Pester)) {
-        throw "Pester не установлен. Установи модуль: Install-Module Pester -Scope CurrentUser"
-    }
-
-    $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
-    $testsPath = Join-Path $projectRoot "tests"
-
-    Invoke-Pester -Path $testsPath
-    Write-ProjectLog -Level "INFO" -Message "Тесты завершены успешно"
+if (-not (Test-Path $TestPath)) {
+    throw "Test file not found: $TestPath"
 }
-catch {
-    Write-ProjectLog -Level "ERROR" -Message $_.Exception.Message
-    Write-Error $_
+
+if (-not (Get-Command Invoke-Pester -ErrorAction SilentlyContinue)) {
+    throw "Invoke-Pester is not available. Install Pester first."
+}
+
+if (-not (Get-Command New-PesterConfiguration -ErrorAction SilentlyContinue)) {
+    throw "New-PesterConfiguration is not available. Ensure Pester 5+ is installed and imported."
+}
+
+$configuration = New-PesterConfiguration
+$configuration.Run.Path = $TestPath
+$configuration.Run.PassThru = $true
+$configuration.Output.Verbosity = 'Detailed'
+
+$result = Invoke-Pester -Configuration $configuration
+
+if ($null -eq $result) {
+    throw "Pester did not return a result object."
+}
+
+if ($result.FailedCount -gt 0) {
     exit 1
 }
+
+exit 0
