@@ -1,67 +1,82 @@
 BeforeAll {
-    $ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
-    $MainAhkPath = Join-Path $ProjectRoot "scripts\yandex-alice-read-selected.ahk"
-    $RunTestsPath = Join-Path $ProjectRoot "tools\run-tests.ps1"
-    $ReadmePath = Join-Path $ProjectRoot "README.md"
-    $DocsPath = Join-Path $ProjectRoot "docs\test-cases.md"
-    $LogsPath = Join-Path $ProjectRoot "logs"
-
-    $AhkContent = Get-Content $MainAhkPath -Raw
-    $ReadmeContent = Get-Content $ReadmePath -Raw
+    $ProjectRoot = Resolve-Path (Join-Path $PSScriptRoot '..')
 }
 
 Describe "Project structure" {
     It "has README.md" {
-        Test-Path $ReadmePath | Should -BeTrue
+        Test-Path (Join-Path $ProjectRoot 'README.md') | Should -BeTrue
     }
 
     It "has main AHK script" {
-        Test-Path $MainAhkPath | Should -BeTrue
+        Test-Path (Join-Path $ProjectRoot 'scripts\yandex-alice-read-selected.ahk') | Should -BeTrue
     }
 
     It "has tools\run-tests.ps1" {
-        Test-Path $RunTestsPath | Should -BeTrue
+        Test-Path (Join-Path $ProjectRoot 'tools\run-tests.ps1') | Should -BeTrue
     }
 
     It "has docs\test-cases.md" {
-        Test-Path $DocsPath | Should -BeTrue
+        Test-Path (Join-Path $ProjectRoot 'docs\test-cases.md') | Should -BeTrue
     }
 
     It "has logs directory" {
-        Test-Path $LogsPath | Should -BeTrue
+        Test-Path (Join-Path $ProjectRoot 'logs') | Should -BeTrue
     }
 }
 
 Describe "Project content" {
     It "README mentions AutoHotkey" {
-        $ReadmeContent | Should -Match "AutoHotkey"
+        $content = Get-Content (Join-Path $ProjectRoot 'README.md') -Raw
+        $content | Should -Match 'AutoHotkey'
     }
 
-    It "AHK script contains MENU_ITEM_INDEX" {
-        $AhkContent | Should -Match "MENU_ITEM_INDEX"
-    }
-
-    It "AHK script contains MENU_OPEN_KEYS" {
-        $AhkContent | Should -Match "MENU_OPEN_KEYS"
-    }
-
-    It "AHK script uses AppsKey" {
-        $AhkContent | Should -Match "AppsKey"
+    It "AHK script contains MAINMENUINDEX" {
+        $content = Get-Content (Join-Path $ProjectRoot 'scripts\yandex-alice-read-selected.ahk') -Raw
+        $content | Should -Match 'MAINMENUINDEX'
     }
 
     It "AHK script contains WriteLog" {
-        $AhkContent | Should -Match "WriteLog"
+        $content = Get-Content (Join-Path $ProjectRoot 'scripts\yandex-alice-read-selected.ahk') -Raw
+        $content | Should -Match 'WriteLog'
     }
 
-    It "AHK script binds F8" {
-        $AhkContent | Should -Match "F8::"
+    It "AHK shared library contains FLOW_START logging marker" {
+        $content = Get-Content (Join-Path $ProjectRoot 'scripts\lib\alice-common.ahk') -Raw
+        $content | Should -Match 'FLOW_START'
     }
 
-    It "AHK script binds F9" {
-        $AhkContent | Should -Match "F9::"
+    It "AHK shared library contains FLOW_DONE logging marker" {
+        $content = Get-Content (Join-Path $ProjectRoot 'scripts\lib\alice-common.ahk') -Raw
+        $content | Should -Match 'FLOW_DONE'
     }
 
-    It "AHK script does not require F10" {
-        $AhkContent | Should -Not -Match "F10::"
+    It "AHK shared library contains FLOW_FAIL logging marker" {
+        $content = Get-Content (Join-Path $ProjectRoot 'scripts\lib\alice-common.ahk') -Raw
+        $content | Should -Match 'FLOW_FAIL'
+    }
+
+    It "AHK shared library contains open_context_menu step logging" {
+        $content = Get-Content (Join-Path $ProjectRoot 'scripts\lib\alice-common.ahk') -Raw
+        $content | Should -Match 'STEP_START open_context_menu'
+    }
+
+    It "AHK shared library contains move_to_menu_item step logging" {
+        $content = Get-Content (Join-Path $ProjectRoot 'scripts\lib\alice-common.ahk') -Raw
+        $content | Should -Match 'STEP_START move_to_menu_item'
+    }
+
+    It "AHK shared library contains choose_current_menu_item step logging" {
+        $content = Get-Content (Join-Path $ProjectRoot 'scripts\lib\alice-common.ahk') -Raw
+        $content | Should -Match 'STEP_START choose_current_menu_item'
+    }
+
+    It "AHK script logs F8 hotkey in stable format" {
+        $content = Get-Content (Join-Path $ProjectRoot 'scripts\yandex-alice-read-selected.ahk') -Raw
+        $content | Should -Match 'Hotkey pressed: F8'
+    }
+
+    It "AHK script logs F9 hotkey in stable format" {
+        $content = Get-Content (Join-Path $ProjectRoot 'scripts\yandex-alice-read-selected.ahk') -Raw
+        $content | Should -Match 'Hotkey pressed: F9'
     }
 }

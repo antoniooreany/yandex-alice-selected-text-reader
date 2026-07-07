@@ -1,46 +1,47 @@
 #Requires AutoHotkey v2.0
 #SingleInstance Force
 
-; =========================================================
 ; SETTINGS
-; =========================================================
-BROWSER_EXE := "ahk_exe browser.exe"
-MENU_ITEM_INDEX := 6
+BROWSEREXE := "ahk_exe browser.exe"
+MAINMENUINDEX := 6
+ALTMENUINDEX := 7
+CONTEXTMENUOPENDELAYMS := 300
+MENUOPENKEYS := "{AppsKey}"
+MENUSTEPDELAYMS := 80
+BEFOREENTERDELAYMS := 120
+NOTIFYHIDEDELAYMS := 1800
+HELPHIDEDELAYMS := 5000
 
-CONTEXT_MENU_OPEN_DELAY_MS := 300
-MENU_OPEN_KEYS := "{AppsKey}"
-MENU_STEP_DELAY_MS := 80
-BEFORE_ENTER_DELAY_MS := 120
-NOTIFY_HIDE_DELAY_MS := 1800
-HELP_HIDE_DELAY_MS := 4500
-
-; =========================================================
 ; PATHS
-; =========================================================
-SCRIPT_DIR := A_ScriptDir
-PROJECT_ROOT := DirExist(SCRIPT_DIR "\..") ? SCRIPT_DIR "\.." : SCRIPT_DIR
-LOG_DIR := PROJECT_ROOT "\logs"
-LOG_FILE := LOG_DIR "\ahk-runtime.log"
+SCRIPTDIR := A_ScriptDir
+PROJECTROOT := DirExist(SCRIPTDIR "\..") ? SCRIPTDIR "\.." : SCRIPTDIR
+LOGDIR := PROJECTROOT "\logs"
+LOGFILE := LOGDIR "\ahk-runtime.log"
 
-HELP_TEXT := "F8  - show help`n"
-    . "F9  - read selected text via Alice menu (item 6)"
+HELPTEXT := "F8 - show help`n"
+    . "F9 - test Alice menu item 6`n"
+    . "F10 - test Alice menu item 7"
 
-#Include .\lib\alice-common.ahk
+#Include ".\lib\alice-common.ahk"
 
-#HotIf WinActive(BROWSER_EXE)
+#HotIf WinActive(BROWSEREXE)
 
-F8::
-{
+F8::{
     WriteLog("INFO", "Hotkey pressed: F8")
-    ShowNotification(HELP_TEXT, HELP_HIDE_DELAY_MS)
-    KeyWait "F8"
+    ShowNotification(HELPTEXT, HELPHIDEDELAYMS)
+    KeyWait("F8")
 }
 
-F9::
-{
+F9::{
     WriteLog("INFO", "Hotkey pressed: F9")
-    ReadSelectedTextByIndex(MENU_ITEM_INDEX, "F9 / AppsKey item 6")
-    KeyWait "F9"
+    ReadSelectedTextByIndex(MAINMENUINDEX, "F9 / AppsKey menu item 6")
+    KeyWait("F9")
+}
+
+F10::{
+    WriteLog("INFO", "Hotkey pressed: F10")
+    ReadSelectedTextByIndex(ALTMENUINDEX, "F10 / AppsKey menu item 7")
+    KeyWait("F10")
 }
 
 #HotIf
