@@ -1,14 +1,14 @@
 #Requires AutoHotkey v2.0
+#SingleInstance Force
 
 ; =========================================================
 ; SETTINGS
 ; =========================================================
 BROWSER_EXE := "ahk_exe browser.exe"
-MAIN_MENU_INDEX := 6
-ALT_MENU_INDEX := 7
-MENU_OPEN_KEYS := "+{F10}"
+MENU_ITEM_INDEX := 6
 
 CONTEXT_MENU_OPEN_DELAY_MS := 300
+MENU_OPEN_KEYS := "{AppsKey}"
 MENU_STEP_DELAY_MS := 80
 BEFORE_ENTER_DELAY_MS := 120
 NOTIFY_HIDE_DELAY_MS := 1800
@@ -22,12 +22,8 @@ PROJECT_ROOT := DirExist(SCRIPT_DIR "\..") ? SCRIPT_DIR "\.." : SCRIPT_DIR
 LOG_DIR := PROJECT_ROOT "\logs"
 LOG_FILE := LOG_DIR "\ahk-runtime.log"
 
-HELP_TEXT :=
-(
-F8  - show help
-F9  - read selected text (primary mode)
-F10 - read selected text (alternate mode)
-)
+HELP_TEXT := "F8  - show help`n"
+    . "F9  - read selected text via Alice menu (item 6)"
 
 #Include .\lib\alice-common.ahk
 
@@ -42,14 +38,9 @@ F8::
 
 F9::
 {
-    ReadSelectedTextByIndex(MAIN_MENU_INDEX, "F9 / primary")
+    WriteLog("INFO", "Hotkey pressed: F9")
+    ReadSelectedTextByIndex(MENU_ITEM_INDEX, "F9 / AppsKey item 6")
     KeyWait "F9"
-}
-
-F10::
-{
-    ReadSelectedTextByIndex(ALT_MENU_INDEX, "F10 / alternate")
-    KeyWait "F10"
 }
 
 #HotIf
