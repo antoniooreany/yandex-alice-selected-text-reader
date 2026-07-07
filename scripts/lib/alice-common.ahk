@@ -1,52 +1,57 @@
 EnsureLogDir() {
-    global LOG_DIR
-    if !DirExist(LOG_DIR) {
-        DirCreate(LOG_DIR)
-    }
+    global LOGDIR
+    if !DirExist(LOGDIR)
+        DirCreate(LOGDIR)
 }
 
 WriteLog(level, message) {
-    global LOG_FILE
+    global LOGFILE
     EnsureLogDir()
     timestamp := FormatTime(, "yyyy-MM-dd HH:mm:ss")
-    FileAppend("[" level "] " timestamp " " message "`n", LOG_FILE, "UTF-8")
+    FileAppend(level " " timestamp " " message "`n", LOGFILE, "UTF-8")
 }
 
-ShowNotification(text, timeoutMs := NOTIFY_HIDE_DELAY_MS) {
-    ToolTip text
-    SetTimer () => ToolTip(), -timeoutMs
+ShowNotification(text, timeoutMs := NOTIFYHIDEDELAYMS) {
+    ToolTip(text)
+    SetTimer(ToolTip, -timeoutMs)
 }
 
 OpenContextMenu() {
-    global MENU_OPEN_KEYS, CONTEXT_MENU_OPEN_DELAY_MS
-    SendEvent MENU_OPEN_KEYS
-    Sleep CONTEXT_MENU_OPEN_DELAY_MS
+    global MENUOPENKEYS, CONTEXTMENUOPENDELAYMS
+    WriteLog("INFO", "STEP_START open_context_menu keys=" MENUOPENKEYS " delayMs=" CONTEXTMENUOPENDELAYMS)
+    SendEvent(MENUOPENKEYS)
+    Sleep(CONTEXTMENUOPENDELAYMS)
+    WriteLog("INFO", "STEP_DONE open_context_menu")
 }
 
 MoveToMenuItem(stepCount) {
-    global MENU_STEP_DELAY_MS
+    global MENUSTEPDELAYMS
+    WriteLog("INFO", "STEP_START move_to_menu_item stepCount=" stepCount " stepDelayMs=" MENUSTEPDELAYMS)
     Loop stepCount {
-        SendEvent "{Down}"
-        Sleep MENU_STEP_DELAY_MS
+        SendEvent("{Down}")
+        Sleep(MENUSTEPDELAYMS)
     }
+    WriteLog("INFO", "STEP_DONE move_to_menu_item stepCount=" stepCount)
 }
 
 ChooseCurrentMenuItem() {
-    global BEFORE_ENTER_DELAY_MS
-    Sleep BEFORE_ENTER_DELAY_MS
-    SendEvent "{Enter}"
+    global BEFOREENTERDELAYMS
+    WriteLog("INFO", "STEP_START choose_current_menu_item beforeEnterDelayMs=" BEFOREENTERDELAYMS)
+    Sleep(BEFOREENTERDELAYMS)
+    SendEvent("{Enter}")
+    WriteLog("INFO", "STEP_DONE choose_current_menu_item")
 }
 
 ReadSelectedTextByIndex(stepCount, modeName) {
     try {
-        WriteLog("INFO", "Starting mode: " modeName ", down steps: " stepCount)
+        WriteLog("INFO", "FLOW_START mode=" modeName " stepCount=" stepCount)
         ShowNotification("Mode started: " modeName)
         OpenContextMenu()
         MoveToMenuItem(stepCount)
         ChooseCurrentMenuItem()
-        WriteLog("INFO", "Mode completed successfully: " modeName)
+        WriteLog("INFO", "FLOW_DONE mode=" modeName)
     } catch Error as err {
-        WriteLog("ERROR", "Mode failed: " modeName ": " err.Message)
+        WriteLog("ERROR", "FLOW_FAIL mode=" modeName " error=" err.Message)
         ShowNotification("Error: " err.Message, 3500)
     }
 }
