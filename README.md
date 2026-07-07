@@ -75,6 +75,45 @@ Suggested smoke-test flow:
 5. Verify that the script selects the configured menu item and starts the intended Alice-related workflow.
 6. Repeat once with no selected text and confirm the script fails safely or does nothing unexpected.
 
+## Debugging Alice flow with FLOW_* logs
+
+Runtime diagnostics are written to `logs/ahk-runtime.log`.[file:344]
+
+When the `F9` hotkey is triggered successfully, the log should contain a full execution flow:[file:344][file:509]
+
+- `Hotkey pressed: F9`[file:344]
+- `FLOW_START mode=...`[file:509]
+- `STEP_START open_context_menu ...`[file:509]
+- `STEP_DONE open_context_menu`[file:509]
+- `STEP_START move_to_menu_item ...`[file:509]
+- `STEP_DONE move_to_menu_item`[file:509]
+- `STEP_START choose_current_menu_item ...`[file:509]
+- `STEP_DONE choose_current_menu_item`[file:509]
+- `FLOW_DONE mode=...`[file:344][file:509]
+
+This step-by-step logging helps identify where the browser interaction fails.[file:509]
+
+Typical interpretation:
+
+- `FLOW_START` is present, but `STEP_DONE open_context_menu` is missing — the context menu did not open as expected.[file:509]
+- `open_context_menu` succeeds, but playback does not start — the fixed menu index may point to the wrong item in the current browser state.[file:344][file:509]
+- `FLOW_FAIL` is present — AutoHotkey raised an exception during execution.[file:509]
+
+To inspect the latest runtime activity:
+
+```powershell
+Get-Content .\logs\ahk-runtime.log -Tail 40
+```
+
+For a clean smoke test:
+
+```powershell
+Get-Process AutoHotkey* -ErrorAction SilentlyContinue | Stop-Process -Force
+powershell -ExecutionPolicy Bypass -File .\tools\run-ahk.ps1
+```
+
+Then select text in the browser, press `F9`, and inspect the log tail again.[file:344]
+
 ## Project context report
 
 To collect a snapshot of the current repository state for debugging or discussion, run:
@@ -114,7 +153,7 @@ The current main script is focused on a single primary flow:
 - `F8` shows a short help notification.
 - `F9` triggers reading of selected text through the Alice-related context menu.
 - The script opens the menu with `AppsKey`.
-- The target action is currently expected at menu item index `6`.
+- The target action is currently expected at menu item index `6`.[file:344]
 
 This behavior may evolve as the project adds stronger debugging support, configurable settings, and future execution modes.
 
