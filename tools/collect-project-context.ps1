@@ -41,6 +41,55 @@ function Add-Section {
     }
 }
 
+function Get-LogTailSafe {
+    param(
+        [string]$Path,
+        [int]$Tail = 200
+    )
+
+    if (Test-Path $Path) {
+        Get-Content $Path -Tail $Tail
+    }
+    else {
+        Write-Output ("{0} not found" -f $Path)
+    }
+}
+
+function Select-LogLines {
+    param(
+        [string]$Path,
+        [string[]]$Patterns,
+        [int]$Tail = 4000
+    )
+
+    if (-not (Test-Path $Path)) {
+        Write-Output ("{0} not found" -f $Path)
+        return
+    }
+
+    $lines = Get-Content $Path -Tail $Tail
+    if (-not $Patterns -or $Patterns.Count -eq 0) {
+        $lines
+        return
+    }
+
+    $matched = foreach ($line in $lines) {
+        foreach ($pattern in $Patterns) {
+            if ($line -match $pattern) {
+                $line
+                break
+            }
+        }
+    }
+
+    if ($matched) {
+        $matched
+    }
+    else {
+        Write-Output "<no matching log lines>"
+    }
+}
+
 New-Item -ItemType Directory -Force -Path $ProjectContextDir | Out-Null
 
 if (Test-Path $OutputPath) {
@@ -57,6 +106,7 @@ $RepoHealthPath = Join-Path $RepoRoot 'tools\check-repo-health.ps1'
 $ProjectTestsPath = Join-Path $RepoRoot 'tests\project.tests.ps1'
 $AhkRuntimeLogPath = Join-Path $RepoRoot 'logs\ahk-runtime.log'
 $ProjectLogPath = Join-Path $RepoRoot 'logs\project.log'
+$CollectProjectContextPath = Join-Path $RepoRoot 'tools\collect-project-context.ps1'
 
 Add-Content -Path $OutputPath -Value "Project context report"
 Add-Content -Path $OutputPath -Value "Generated: $timestamp"
@@ -122,6 +172,10 @@ try {
         git diff -- $RunAhkPath
     }
 
+    Add-Section 'GIT DIFF -- tools/collect-project-context.ps1' {
+        git diff -- $CollectProjectContextPath
+    }
+
     Add-Section 'GIT DIFF -- tests/project.tests.ps1' {
         git diff -- $ProjectTestsPath
     }
@@ -138,26 +192,63 @@ try {
         Get-Content $RunAhkPath -Raw
     }
 
+    Add-Section 'FILE CONTENT -- tools/collect-project-context.ps1' {
+        Get-Content $CollectProjectContextPath -Raw
+    }
+
     Add-Section 'FILE CONTENT -- tests/project.tests.ps1' {
         Get-Content $ProjectTestsPath -Raw
     }
 
-    Add-Section 'LOG FILE -- logs/ahk-runtime.log' {
-        if (Test-Path $AhkRuntimeLogPath) {
-            Get-Content $AhkRuntimeLogPath -Raw
-        }
-        else {
-            Write-Output 'logs/ahk-runtime.log not found'
-        }
+    Add-Section 'LOG FILE -- logs/ahk-runtime.log (tail 200)' {
+        Get-LogTailSafe -Path $AhkRuntimeLogPath -Tail 200
     }
 
-    Add-Section 'LOG FILE -- logs/project.log' {
-        if (Test-Path $ProjectLogPath) {
-            Get-Content $ProjectLogPath -Raw
-        }
-        else {
-            Write-Output 'logs/project.log not found'
-        }
+    Add-Section 'LOG FILE -- logs/project.log (tail 200)' {
+        Get-LogTailSafe -Path $ProjectLogPath -Tail 200
+    }
+
+    Add-Section 'LOG FILTER -- F9/F11/F12 hotkeys and flow markers' {
+        Select-LogLines -Path $AhkRuntimeLogPath -Tail 4000 -Patterns @(
+            'Hotkey pressed F9',
+            'Hotkey pressed F11',
+            'Hotkey pressed F12',
+            'FLOWSTART',
+            'FLOWDONE',
+            'FLOWCANCELLED',
+            'FLOWFAIL'
+        )
+    }
+
+    Add-Section 'LOG FILTER -- debug contract markers' {
+        Select-LogLines -Path $AhkRuntimeLogPath -Tail 4000 -Patterns @(
+            'debugfalse',
+            'debugtrue',
+            'contextMenuOpenDelayMs',
+            'menuStepDelayMs',
+            'beforeEnterDelayMs'
+        )
+    }
+
+    Add-Section 'LOG FILTER -- F12 step-debug markers' {
+        Select-LogLines -Path $AhkRuntimeLogPath -Tail 4000 -Patterns @(
+            'Hotkey pressed F12',
+            'modeF12',
+            'FLOWSTART modeF12',
+            'STEPSTART',
+            'STEPDONE',
+            'FLOWDONE modeF12',
+            'FLOWCANCELLED modeF12',
+            'FLOWFAIL modeF12'
+        )
+    }
+
+    Add-Section 'LOG FILTER -- cancellation markers' {
+        Select-LogLines -Path $AhkRuntimeLogPath -Tail 4000 -Patterns @(
+            'Cancel',
+            'FLOWCANCELLED',
+            'FLOWFAIL'
+        )
     }
 
     Add-Section 'TEST OUTPUT -- run-tests.ps1' {
@@ -171,6 +262,23 @@ try {
         else {
             Write-Output 'tools/check-repo-health.ps1 not found'
         }
+    }
+
+    Add-Section 'SMOKE TEST COMMANDS' {
+        Write-Output 'Run tests:'
+        Write-Output 'powershell -ExecutionPolicy Bypass -File .\tools\run-tests.ps1'
+        Write-Output ''
+        Write-Output 'Run AHK:'
+        Write-Output 'powershell -ExecutionPolicy Bypass -File .\tools\run-ahk.ps1'
+        Write-Output ''
+        Write-Output 'Watch runtime log:'
+        Write-Output 'Get-Content .\logs\ahk-runtime.log -Wait'
+        Write-Output ''
+        Write-Output 'Tail runtime log:'
+        Write-Output 'Get-Content .\logs\ahk-runtime.log -Tail 50'
+        Write-Output ''
+        Write-Output 'Expected F12 normal path: FLOW_DONE without FLOW_FAIL'
+        Write-Output 'Expected F12 cancel path: FLOW_CANCELLED without FLOW_FAIL'
     }
 }
 finally {
