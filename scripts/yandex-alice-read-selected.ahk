@@ -9,6 +9,9 @@ CONTEXTMENUOPENDELAYMS := 300
 MENUOPENKEYS := "{AppsKey}"
 MENUSTEPDELAYMS := 80
 BEFOREENTERDELAYMS := 120
+DEBUGCONTEXTMENUOPENDELAYMS := 900
+DEBUGMENUSTEPDELAYMS := 300
+DEBUGBEFOREENTERDELAYMS := 500
 NOTIFYHIDEDELAYMS := 1800
 HELPHIDEDELAYMS := 5000
 
@@ -20,7 +23,8 @@ LOGFILE := LOGDIR "\ahk-runtime.log"
 
 HELPTEXT := "F8 - show help`n"
     . "F9 - test Alice menu item 6`n"
-    . "F10 - test Alice menu item 7"
+    . "F10 - test Alice menu item 7`n"
+    . "F11 - debug primary Alice flow"
 
 #Include ".\lib\alice-common.ahk"
 
@@ -42,6 +46,12 @@ F10::{
     WriteLog("INFO", "Hotkey pressed: F10")
     ReadSelectedTextByIndex(ALTMENUINDEX, "F10 / AppsKey menu item 7")
     KeyWait("F10")
+}
+
+F11::{
+    WriteLog("INFO", "Hotkey pressed: F11")
+    ReadSelectedTextByIndex(MAINMENUINDEX, "F11 debug / AppsKey menu item 6", GetRunProfile(true))
+    KeyWait("F11")
 }
 
 #HotIf

@@ -30,6 +30,16 @@ Describe "Project content" {
         $content | Should -Match 'AutoHotkey'
     }
 
+    It "README mentions debug mode hotkey F11" {
+        $content = Get-Content (Join-Path $ProjectRoot 'README.md') -Raw
+        $content | Should -Match 'F11'
+    }
+
+    It "README mentions slower timing in debug mode" {
+        $content = Get-Content (Join-Path $ProjectRoot 'README.md') -Raw
+        $content | Should -Match 'slower timing'
+    }
+
     It "AHK script contains MAINMENUINDEX" {
         $content = Get-Content (Join-Path $ProjectRoot 'scripts\yandex-alice-read-selected.ahk') -Raw
         $content | Should -Match 'MAINMENUINDEX'
@@ -38,6 +48,26 @@ Describe "Project content" {
     It "AHK script contains WriteLog" {
         $content = Get-Content (Join-Path $ProjectRoot 'scripts\yandex-alice-read-selected.ahk') -Raw
         $content | Should -Match 'WriteLog'
+    }
+
+    It "AHK script contains F11 hotkey" {
+        $content = Get-Content (Join-Path $ProjectRoot 'scripts\yandex-alice-read-selected.ahk') -Raw
+        $content | Should -Match 'F11::'
+    }
+
+    It "AHK script logs F8 hotkey in stable format" {
+        $content = Get-Content (Join-Path $ProjectRoot 'scripts\yandex-alice-read-selected.ahk') -Raw
+        $content | Should -Match 'Hotkey pressed: F8'
+    }
+
+    It "AHK script logs F9 hotkey in stable format" {
+        $content = Get-Content (Join-Path $ProjectRoot 'scripts\yandex-alice-read-selected.ahk') -Raw
+        $content | Should -Match 'Hotkey pressed: F9'
+    }
+
+    It "AHK script logs F11 hotkey in stable format" {
+        $content = Get-Content (Join-Path $ProjectRoot 'scripts\yandex-alice-read-selected.ahk') -Raw
+        $content | Should -Match 'Hotkey pressed: F11'
     }
 
     It "AHK shared library contains FLOW_START logging marker" {
@@ -70,13 +100,13 @@ Describe "Project content" {
         $content | Should -Match 'STEP_START choose_current_menu_item'
     }
 
-    It "AHK script logs F8 hotkey in stable format" {
-        $content = Get-Content (Join-Path $ProjectRoot 'scripts\yandex-alice-read-selected.ahk') -Raw
-        $content | Should -Match 'Hotkey pressed: F8'
+    It "AHK shared library contains debug profile helper" {
+        $content = Get-Content (Join-Path $ProjectRoot 'scripts\lib\alice-common.ahk') -Raw
+        $content | Should -Match 'GetRunProfile'
     }
 
-    It "AHK script logs F9 hotkey in stable format" {
-        $content = Get-Content (Join-Path $ProjectRoot 'scripts\yandex-alice-read-selected.ahk') -Raw
-        $content | Should -Match 'Hotkey pressed: F9'
+    It "AHK shared library logs debug flag in flow start" {
+        $content = Get-Content (Join-Path $ProjectRoot 'scripts\lib\alice-common.ahk') -Raw
+        $content | Should -Match 'debug='
     }
 }
