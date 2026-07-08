@@ -10,8 +10,23 @@ EnsureLogDir() {
 WriteLog(level, message) {
     global LOGFILE
     EnsureLogDir()
+
     timestamp := FormatTime(, "yyyy-MM-dd HH:mm:ss")
-    FileAppend(level " " timestamp " " message "`n", LOGFILE, "UTF-8")
+    line := level " " timestamp " " message "`n"
+
+    Loop 5 {
+        try {
+            FileAppend(line, LOGFILE, "UTF-8")
+            return true
+        } catch Error {
+            if (A_Index = 5) {
+                return false
+            }
+            Sleep(40)
+        }
+    }
+
+    return false
 }
 
 ShowNotification(text, timeoutMs := NOTIFYHIDEDELAYMS) {
@@ -92,10 +107,10 @@ ReadSelectedTextByIndex(stepCount, modeName, stepDebug := false) {
         ChooseCurrentMenuItem(stepDebug)
         WriteLog("INFO", "FLOW_DONE mode=" modeName)
     } catch FlowCancelledError as cancelErr {
-        WriteLog("WARN", "FLOW_CANCELLED mode=" modeName " reason=" cancelErr.Message)
+        try WriteLog("WARN", "FLOW_CANCELLED mode=" modeName " reason=" cancelErr.Message)
         ShowNotification("Cancelled: " modeName, 2500)
     } catch Error as err {
-        WriteLog("ERROR", "FLOW_FAIL mode=" modeName " error=" err.Message)
+        try WriteLog("ERROR", "FLOW_FAIL mode=" modeName " error=" err.Message)
         ShowNotification("Error: " err.Message, 3500)
     }
 }
