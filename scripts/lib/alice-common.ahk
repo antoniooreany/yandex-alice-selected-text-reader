@@ -1,3 +1,6 @@
+class FlowCancelledError extends Error {
+}
+
 EnsureLogDir() {
     global LOGDIR
     if !DirExist(LOGDIR)
@@ -16,94 +19,83 @@ ShowNotification(text, timeoutMs := NOTIFYHIDEDELAYMS) {
     SetTimer(ToolTip, -timeoutMs)
 }
 
-BoolText(value) {
-    return value ? "true" : "false"
+ConfirmStep(stepKey, promptText) {
+    result := MsgBox(promptText, "Alice step debug", "OKCancel Iconi")
+    if (result != "OK") {
+        throw FlowCancelledError("Cancelled at step: " stepKey)
+    }
 }
 
-GetRunProfile(isDebug := false) {
-    global CONTEXTMENUOPENDELAYMS
-    global MENUSTEPDELAYMS
-    global BEFOREENTERDELAYMS
-    global DEBUGCONTEXTMENUOPENDELAYMS
-    global DEBUGMENUSTEPDELAYMS
-    global DEBUGBEFOREENTERDELAYMS
+OpenContextMenu(stepDebug := false) {
+    global MENUOPENKEYS, CONTEXTMENUOPENDELAYMS
+    WriteLog("INFO", "STEP_START open_context_menu keys=" MENUOPENKEYS " delayMs=" CONTEXTMENUOPENDELAYMS)
 
-    if isDebug {
-        return Map(
-            "debug", true,
-            "contextMenuOpenDelayMs", DEBUGCONTEXTMENUOPENDELAYMS,
-            "menuStepDelayMs", DEBUGMENUSTEPDELAYMS,
-            "beforeEnterDelayMs", DEBUGBEFOREENTERDELAYMS
+    if stepDebug {
+        ConfirmStep(
+            "open_context_menu",
+            "Step: open_context_menu`n`nPress OK to open the browser context menu with " MENUOPENKEYS ".`nPress Cancel to stop."
         )
     }
 
-    return Map(
-        "debug", false,
-        "contextMenuOpenDelayMs", CONTEXTMENUOPENDELAYMS,
-        "menuStepDelayMs", MENUSTEPDELAYMS,
-        "beforeEnterDelayMs", BEFOREENTERDELAYMS
-    )
-}
-
-OpenContextMenu(profile) {
-    global MENUOPENKEYS
-    delayMs := profile["contextMenuOpenDelayMs"]
-    WriteLog("INFO", "STEP_START open_context_menu keys=" MENUOPENKEYS " delayMs=" delayMs)
     SendEvent(MENUOPENKEYS)
-    Sleep(delayMs)
+    Sleep(CONTEXTMENUOPENDELAYMS)
     WriteLog("INFO", "STEP_DONE open_context_menu")
 }
 
-MoveToMenuItem(stepCount, profile) {
-    delayMs := profile["menuStepDelayMs"]
-    WriteLog("INFO", "STEP_START move_to_menu_item stepCount=" stepCount " stepDelayMs=" delayMs)
+MoveToMenuItem(stepCount, stepDebug := false) {
+    global MENUSTEPDELAYMS
+    WriteLog("INFO", "STEP_START move_to_menu_item stepCount=" stepCount " stepDelayMs=" MENUSTEPDELAYMS)
+
     Loop stepCount {
+        currentStep := A_Index
+
+        if stepDebug {
+            ConfirmStep(
+                "move_to_menu_item_" currentStep,
+                "Step: move_to_menu_item`n`n"
+                . "About to send {Down} step " currentStep " of " stepCount ".`n"
+                . "Press OK to continue to the next menu item.`n"
+                . "Press Cancel to stop."
+            )
+            ShowNotification("F12 step debug: Down " currentStep " of " stepCount, 1000)
+        }
+
         SendEvent("{Down}")
-        Sleep(delayMs)
+        Sleep(MENUSTEPDELAYMS)
     }
+
     WriteLog("INFO", "STEP_DONE move_to_menu_item stepCount=" stepCount)
 }
 
-ChooseCurrentMenuItem(profile) {
-    delayMs := profile["beforeEnterDelayMs"]
-    WriteLog("INFO", "STEP_START choose_current_menu_item beforeEnterDelayMs=" delayMs)
-    Sleep(delayMs)
+ChooseCurrentMenuItem(stepDebug := false) {
+    global BEFOREENTERDELAYMS
+    WriteLog("INFO", "STEP_START choose_current_menu_item beforeEnterDelayMs=" BEFOREENTERDELAYMS)
+
+    if stepDebug {
+        ConfirmStep(
+            "choose_current_menu_item",
+            "Step: choose_current_menu_item`n`nPress OK to confirm the current menu item with Enter.`nPress Cancel to stop."
+        )
+    }
+
+    Sleep(BEFOREENTERDELAYMS)
     SendEvent("{Enter}")
     WriteLog("INFO", "STEP_DONE choose_current_menu_item")
 }
 
-ReadSelectedTextByIndex(stepCount, modeName, profile := unset) {
-    if !IsSet(profile)
-        profile := GetRunProfile(false)
-
-    debugText := BoolText(profile["debug"])
-    contextMenuOpenDelayMs := profile["contextMenuOpenDelayMs"]
-    menuStepDelayMs := profile["menuStepDelayMs"]
-    beforeEnterDelayMs := profile["beforeEnterDelayMs"]
-
+ReadSelectedTextByIndex(stepCount, modeName, stepDebug := false) {
     try {
-        WriteLog(
-            "INFO",
-            "FLOW_START mode=" modeName
-            " stepCount=" stepCount
-            " debug=" debugText
-            " contextMenuOpenDelayMs=" contextMenuOpenDelayMs
-            " menuStepDelayMs=" menuStepDelayMs
-            " beforeEnterDelayMs=" beforeEnterDelayMs
-        )
-
-        if profile["debug"]
-            ShowNotification("Debug mode started: " modeName, 2500)
-        else
-            ShowNotification("Mode started: " modeName)
-
-        OpenContextMenu(profile)
-        MoveToMenuItem(stepCount, profile)
-        ChooseCurrentMenuItem(profile)
-
-        WriteLog("INFO", "FLOW_DONE mode=" modeName " debug=" debugText)
+        WriteLog("INFO", "FLOW_START mode=" modeName " stepCount=" stepCount " stepDebug=" stepDebug)
+        ShowNotification("Mode started: " modeName)
+        OpenContextMenu(stepDebug)
+        MoveToMenuItem(stepCount, stepDebug)
+        ChooseCurrentMenuItem(stepDebug)
+        WriteLog("INFO", "FLOW_DONE mode=" modeName)
+    } catch FlowCancelledError as cancelErr {
+        WriteLog("WARN", "FLOW_CANCELLED mode=" modeName " reason=" cancelErr.Message)
+        ShowNotification("Cancelled: " modeName, 2500)
     } catch Error as err {
-        WriteLog("ERROR", "FLOW_FAIL mode=" modeName " debug=" debugText " error=" err.Message)
+        WriteLog("ERROR", "FLOW_FAIL mode=" modeName " error=" err.Message)
         ShowNotification("Error: " err.Message, 3500)
     }
 }
