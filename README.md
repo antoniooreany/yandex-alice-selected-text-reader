@@ -118,7 +118,7 @@ Important log markers:
 - `FLOWCANCELLED` — the flow was cancelled intentionally.
 - `FLOWFAIL` — the flow failed with an error.
 - `STEPSTART ...` / `STEPDONE ...` — step-level diagnostics for the menu automation.
-- `STEPPROGRESS movetomenuitem ...` — optional per-step progress during step-debug menu traversal.
+- `FLOWDETAIL ...` / `STEPDETAIL ...` — additional runtime details for mode, timing, and step execution.
 
 Typical examples:
 
@@ -160,6 +160,7 @@ The PowerShell tests check the repository contract, including:
 
 - presence of key project files;
 - presence of the main AHK script;
+- presence of the shared AHK library;
 - presence of docs and logs directory;
 - stable logging markers such as `FLOWSTART`, `FLOWDONE`, `FLOWFAIL`, and `FLOWCANCELLED`;
 - hotkey-related expectations in the main script;
