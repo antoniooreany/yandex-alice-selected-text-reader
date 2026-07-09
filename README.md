@@ -11,6 +11,8 @@ The script works only when the target browser window is active. It opens the bro
 - Configurable menu item indexes for Alice actions.
 - Runtime logging to `logs/ahk-runtime.log`.
 - Normal flow, debug flow, and step-debug flow for troubleshooting.
+- Timing profile diagnostics through `TIMINGPROFILE`.
+- Per-attempt diagnostics through `flowAttemptId`.
 - PowerShell helpers for running the script and tests.
 
 ## Project structure
@@ -68,13 +70,13 @@ The main script defines these hotkeys for the active browser window.
 1. Open the browser context menu.
 2. Move down by the configured number of menu steps.
 3. Confirm the current menu item with Enter.
-4. Write `FLOWSTART` and `FLOWDONE` markers to the runtime log.
+4. Write `TIMINGPROFILE`, `FLOWSTART`, and terminal markers to the runtime log.
 
 ### Debug flow
 
 `Ctrl+F11` runs the primary Alice flow through the debug hotkey, but without step confirmations and without replay.
 
-Use this mode when you want a dedicated debug entry point for the primary action without taking over the browser fullscreen shortcut.
+Use this mode when you want a dedicated debug entry point for the primary action without taking over the browser fullscreen shortcut. This mode is expected to apply a slower timing profile and to record a `TIMINGPROFILE applied` line before the flow starts.
 
 ### Step-debug flow
 
@@ -90,6 +92,8 @@ This mode is intended for troubleshooting and manual verification of the menu au
 - `FLOWDONE`
 - `FLOWCANCELLED`
 - `FLOWFAIL`
+- `TIMINGPROFILE`
+- `flowAttemptId`
 
 In step-debug mode, the script first runs the flow with per-step confirmations. After the first pass, it asks:
 
@@ -117,21 +121,25 @@ scripts/lib/alice-common.ahk
 
 Important log markers:
 
+- `TIMINGPROFILE` — the currently applied timing profile for the attempt.
 - `FLOWSTART` — the selected Alice flow started.
 - `FLOWDONE` — the flow finished successfully.
 - `FLOWCANCELLED` — the flow was cancelled intentionally.
 - `FLOWFAIL` — the flow failed with an error.
 - `STEPSTART ...` / `STEPDONE ...` — step-level diagnostics for the menu automation.
-- `FLOWDETAIL ...` / `STEPDETAIL ...` — additional runtime details for mode, timing, and step execution.
+- `FLOWDETAIL ...` / `STEPDETAIL ...` — additional runtime details for mode, timing, step execution, and active window context.
+- `flowAttemptId` — correlates all log lines that belong to the same attempt.
 
 Typical examples:
 
 ```text
-INFO 2026-07-08 13:38:42 Hotkey pressed F9
-INFO 2026-07-08 13:38:42 FLOWSTART mode=F9 AppsKey menu item 6 stepCount=6 stepDebug=0
-INFO 2026-07-08 13:38:42 STEPSTART opencontextmenu keys=AppsKey delayMs=300
-INFO 2026-07-08 13:38:42 STEPDONE opencontextmenu
-INFO 2026-07-08 13:38:43 FLOWDONE mode=F9 AppsKey menu item 6
+INFO 2026-07-09 21:00:00 Hotkey pressed F9
+INFO 2026-07-09 21:00:00 TIMINGPROFILE applied profile=normal
+INFO 2026-07-09 21:00:00 FLOWSTART mode=F9 AppsKey menu item 6 stepCount=6 stepDebug=0 flowAttemptId=20260709-210000-001
+INFO 2026-07-09 21:00:00 FLOWDETAIL mode=F9 AppsKey menu item 6 stepCount=6 stepDebug=0 timingProfile=normal contextMenuOpenDelayMs=300 menuStepDelayMs=80 beforeEnterDelayMs=120 flowAttemptId=20260709-210000-001
+INFO 2026-07-09 21:00:00 STEPSTART opencontextmenu keys={AppsKey} delayMs=300 flowAttemptId=20260709-210000-001
+INFO 2026-07-09 21:00:01 STEPDONE opencontextmenu flowAttemptId=20260709-210000-001
+INFO 2026-07-09 21:00:02 FLOWDONE mode=F9 AppsKey menu item 6 flowAttemptId=20260709-210000-001
 ```
 
 A successful `Ctrl+F12` run should contain the first pass step markers, then the replay prompt, then a replay attempt without confirmations, and finally `FLOWDONE`. The replay markers are useful for diagnostics, but they should not be interpreted as a strict UX guarantee for every browser or menu state.
@@ -171,7 +179,9 @@ The PowerShell tests check the repository contract, including:
 - help text expectations;
 - presence of the `Ctrl+F11` and `Ctrl+F12` bindings;
 - absence of plain `F11::` in the application hotkey definitions;
-- presence of the replay confirmation contract for step-debug mode.
+- presence of the replay confirmation contract for step-debug mode;
+- presence of `TIMINGPROFILE` diagnostics;
+- presence of `flowAttemptId` diagnostics.
 
 The main test file is:
 
@@ -186,7 +196,7 @@ Additional manual test coverage and project notes are stored here:
 - `docs/test-cases.md`
 - `docs/notes.md`
 
-Use `docs/test-cases.md` for manual verification scenarios around hotkeys, debug behavior, replay behavior, and expected runtime logging.
+Use `docs/test-cases.md` for manual verification scenarios around hotkeys, debug behavior, replay behavior, timing profiles, flowAttemptId correlation, and expected runtime logging.
 
 ## Troubleshooting
 
@@ -208,10 +218,13 @@ Check:
 
 - `MAIN_MENU_INDEX` and `ALT_MENU_INDEX`;
 - browser context menu order;
-- timing values inside `alice-common.ahk`, especially the delays used for:
+- timing values inside the AHK scripts, especially the delays used for:
   - opening the context menu;
   - moving through menu items;
-  - pressing Enter.
+  - pressing Enter;
+- whether `TIMINGPROFILE applied profile=...` matches the expected mode;
+- whether `flowAttemptId` can be used to isolate the exact attempt;
+- whether `FLOWDETAIL` / `STEPDETAIL` include the expected timing and active window context.
 
 ### Step-debug replay expectations
 
@@ -222,7 +235,8 @@ If the replay phase behaves inconsistently, check:
 - that the script reaches `ConfirmStep("replayall", ...)`;
 - that replay calls `OpenContextMenu(false)`, `MoveToMenuItem(stepCount, false)`, and `ChooseCurrentMenuItem(false)`;
 - that the runtime log contains `STEPSTART replayall`, `STEPDONE replayall`, and `FLOWDETAIL stepdebug phase=replay-without-confirmations`;
-- that `Ctrl+F11` does not call `ReadSelectedTextByIndex(..., true)` by mistake.
+- that `Ctrl+F11` does not call `ReadSelectedTextByIndex(..., true)` by mistake;
+- that the same `flowAttemptId` covers the full attempt from `FLOWSTART` to `FLOWDONE` or `FLOWCANCELLED`.
 
 At the moment, replay is treated as best-effort diagnostic behavior rather than a guaranteed production workflow. If this mode becomes important in regular use, it can be refined in a dedicated follow-up change.
 
@@ -243,7 +257,9 @@ Get-Content .\logs\ahk-runtime.log -Tail 50
 If the flow starts but does not complete, compare the latest log entries for:
 
 - the hotkey pressed line;
+- `TIMINGPROFILE`;
 - `FLOWSTART`;
+- `flowAttemptId`;
 - step-level markers;
 - `FLOWDONE`, `FLOWCANCELLED`, or `FLOWFAIL`.
 
@@ -251,7 +267,7 @@ If the flow starts but does not complete, compare the latest log entries for:
 
 The repository also includes helper scripts for diagnostics and project health checks, including project context collection. These helpers are useful when preparing bug reports, validating the current branch state, or reviewing runtime behavior during hotkey and flow changes.
 
-When changing hotkeys, debug flow, or runtime logging, update these files together:
+When changing hotkeys, debug flow, runtime logging, timing profile handling, or per-attempt diagnostics, update these files together:
 
 - `scripts/yandex-alice-read-selected.ahk`
 - `scripts/lib/alice-common.ahk`

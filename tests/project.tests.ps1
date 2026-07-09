@@ -85,6 +85,14 @@ Describe "README contract" {
     It "README mentions replay confirmation contract" {
         $Readme | Should -Match "Replay all steps without confirmations\?"
     }
+
+    It "README mentions timing profile diagnostics" {
+        $Readme | Should -Match "TIMINGPROFILE"
+    }
+
+    It "README mentions flowAttemptId diagnostics" {
+        $Readme | Should -Match "flowAttemptId"
+    }
 }
 
 Describe "Main AHK script contract" {
@@ -150,6 +158,18 @@ Describe "Main AHK script contract" {
     It "AHK script does not bind plain F11" {
         $MainAhk | Should -Not -Match "(?m)^F11::"
     }
+
+    It "AHK script contains ApplyTimingProfile helper" {
+        $MainAhk | Should -Match "ApplyTimingProfile\(profileName,\s*contextMenuOpenDelayMs,\s*menuStepDelayMs,\s*beforeEnterDelayMs\)"
+    }
+
+    It "AHK script logs timing profile application" {
+        $MainAhk | Should -Match "TIMINGPROFILE applied"
+    }
+
+    It "AHK script tracks active timing profile name" {
+        $MainAhk | Should -Match "ACTIVETIMINGPROFILENAME"
+    }
 }
 
 Describe "Shared AHK library contract" {
@@ -203,6 +223,46 @@ Describe "Shared AHK library contract" {
         $CommonAhk | Should -Match "MoveToMenuItem\(stepCount,\s*false\)"
         $CommonAhk | Should -Match "ChooseCurrentMenuItem\(false\)"
     }
+
+    It "AHK shared library logs timingProfile in flow details" {
+        $CommonAhk | Should -Match "timingProfile="
+    }
+
+    It "AHK shared library logs flowAttemptId markers" {
+        $CommonAhk | Should -Match "flowAttemptId="
+    }
+
+    It "AHK shared library logs activeWindowTitle diagnostics" {
+        $CommonAhk | Should -Match "activeWindowTitle="
+    }
+
+    It "AHK shared library logs activeWindowClass diagnostics" {
+        $CommonAhk | Should -Match "activeWindowClass="
+    }
+
+    It "AHK shared library logs activeWindowProcess diagnostics" {
+        $CommonAhk | Should -Match "activeWindowProcess="
+    }
+
+    It "AHK shared library contains helper for timing profile lookup" {
+        $CommonAhk | Should -Match "GetTimingProfileName"
+    }
+
+    It "AHK shared library contains helper for flow context map" {
+        $CommonAhk | Should -Match "GetFlowContext"
+    }
+
+    It "AHK shared library logs step confirmation prompts" {
+        $CommonAhk | Should -Match "STEPPROMPT"
+    }
+
+    It "AHK shared library logs step confirmation acceptance" {
+        $CommonAhk | Should -Match "STEPCONFIRMED"
+    }
+
+    It "AHK shared library logs step confirmation cancellation" {
+        $CommonAhk | Should -Match "STEPCANCELLED"
+    }
 }
 
 Describe "Manual test cases document contract" {
@@ -232,5 +292,13 @@ Describe "Manual test cases document contract" {
 
     It "test cases mention plain F11 must not be captured" {
         $TestCases | Should -Match 'Plain .*F11.* must not be used by the script'
+    }
+
+    It "test cases mention TIMINGPROFILE diagnostics" {
+        $TestCases | Should -Match "TIMINGPROFILE"
+    }
+
+    It "test cases mention flowAttemptId diagnostics" {
+        $TestCases | Should -Match "flowAttemptId"
     }
 }
