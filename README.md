@@ -47,21 +47,23 @@ The script works only when the target browser window is active. It opens the bro
 
 ## Hotkeys
 
-The main script defines these hotkeys for the active browser window:
+The main script defines these hotkeys for the active browser window.
 
 - `F8` — show help.
 - `F9` — run the primary Alice action using `MAIN_MENU_INDEX`.
 - `F10` — run the secondary Alice action using `ALT_MENU_INDEX`.
 - `Ctrl+F11` — debug primary Alice flow.
-- `Ctrl+F12` — step-debug primary Alice flow.
+- `Ctrl+F12` — experimental step-debug primary Alice flow for troubleshooting.
 
 `F11` is intentionally not used by the script. In browsers, plain `F11` is typically reserved for fullscreen mode, so the project uses `Ctrl+F11` for the debug entry point instead.
+
+`Ctrl+F12` should be treated as an experimental troubleshooting path. The main supported user-facing flows are `F9`, `F10`, and `Ctrl+F11`.
 
 ## Current behavior
 
 ### Normal flow
 
-`F9` and `F10` run the normal non-interactive flow:
+`F9` and `F10` run the normal non-interactive flow.
 
 1. Open the browser context menu.
 2. Move down by the configured number of menu steps.
@@ -76,7 +78,7 @@ Use this mode when you want a dedicated debug entry point for the primary action
 
 ### Step-debug flow
 
-`Ctrl+F12` runs the primary Alice flow in step-debug mode.
+`Ctrl+F12` runs the primary Alice flow in experimental step-debug mode.
 
 This mode is intended for troubleshooting and manual verification of the menu automation. The shared library contains step-level instrumentation and confirmation helpers such as:
 
@@ -95,7 +97,9 @@ In step-debug mode, the script first runs the flow with per-step confirmations. 
 Replay all steps without confirmations?
 ```
 
-If confirmed, the script replays the same scenario once more without step-by-step prompts and finishes with `FLOWDONE`. If cancelled at that point, the run is recorded as `FLOWCANCELLED`.
+If confirmed, the script attempts one replay of the same scenario without step-by-step prompts and then finishes with `FLOWDONE`. If cancelled at that point, the run is recorded as `FLOWCANCELLED`.
+
+The replay phase is best-effort and should be treated as a troubleshooting aid rather than a guaranteed end-user workflow. It is useful for diagnostics and repeated input emission, but it is not currently documented as a strict guarantee of identical browser or menu behavior in every state.
 
 ## Logging
 
@@ -118,7 +122,7 @@ Important log markers:
 - `FLOWCANCELLED` — the flow was cancelled intentionally.
 - `FLOWFAIL` — the flow failed with an error.
 - `STEPSTART ...` / `STEPDONE ...` — step-level diagnostics for the menu automation.
-- `STEPPROGRESS movetomenuitem ...` — optional per-step progress during step-debug menu traversal.
+- `FLOWDETAIL ...` / `STEPDETAIL ...` — additional runtime details for mode, timing, and step execution.
 
 Typical examples:
 
@@ -130,7 +134,7 @@ INFO 2026-07-08 13:38:42 STEPDONE opencontextmenu
 INFO 2026-07-08 13:38:43 FLOWDONE mode=F9 AppsKey menu item 6
 ```
 
-A successful `Ctrl+F12` run should contain the first pass step markers, then the replay prompt, then a second pass without confirmations, and finally `FLOWDONE`.
+A successful `Ctrl+F12` run should contain the first pass step markers, then the replay prompt, then a replay attempt without confirmations, and finally `FLOWDONE`. The replay markers are useful for diagnostics, but they should not be interpreted as a strict UX guarantee for every browser or menu state.
 
 ## Running the script
 
@@ -160,6 +164,7 @@ The PowerShell tests check the repository contract, including:
 
 - presence of key project files;
 - presence of the main AHK script;
+- presence of the shared AHK library;
 - presence of docs and logs directory;
 - stable logging markers such as `FLOWSTART`, `FLOWDONE`, `FLOWFAIL`, and `FLOWCANCELLED`;
 - hotkey-related expectations in the main script;
@@ -208,13 +213,18 @@ Check:
   - moving through menu items;
   - pressing Enter.
 
-### Step-debug does not replay
+### Step-debug replay expectations
 
-If `Ctrl+F12` completes the confirmed first pass but does not start replay:
+`Ctrl+F12` is primarily a troubleshooting mode. The guided first pass, confirmation prompts, and runtime log markers are the main supported contract for this flow.
 
-- verify that the script actually reaches `ConfirmStep("replayall", ...)`;
-- verify that replay calls `OpenContextMenu(false)`, `MoveToMenuItem(stepCount, false)`, and `ChooseCurrentMenuItem(false)`;
-- verify that `Ctrl+F11` does not call `ReadSelectedTextByIndex(..., true)` by mistake.
+If the replay phase behaves inconsistently, check:
+
+- that the script reaches `ConfirmStep("replayall", ...)`;
+- that replay calls `OpenContextMenu(false)`, `MoveToMenuItem(stepCount, false)`, and `ChooseCurrentMenuItem(false)`;
+- that the runtime log contains `STEPSTART replayall`, `STEPDONE replayall`, and `FLOWDETAIL stepdebug phase=replay-without-confirmations`;
+- that `Ctrl+F11` does not call `ReadSelectedTextByIndex(..., true)` by mistake.
+
+At the moment, replay is treated as best-effort diagnostic behavior rather than a guaranteed production workflow. If this mode becomes important in regular use, it can be refined in a dedicated follow-up change.
 
 ### Debugging with logs
 

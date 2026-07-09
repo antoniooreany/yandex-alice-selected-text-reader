@@ -96,6 +96,10 @@ Describe "Main AHK script contract" {
         $MainAhk | Should -Match "ALT_MENU_INDEX"
     }
 
+    It "AHK script does not contain removed fast-mode helper" {
+        $MainAhk | Should -Not -Match "PRIMARY_FAST_MODE_STEP_COUNT\(\)"
+    }
+
     It "AHK script contains WriteLog usage" {
         $MainAhk | Should -Match "WriteLog"
     }
@@ -128,16 +132,19 @@ Describe "Main AHK script contract" {
         $MainAhk | Should -Match "Ctrl\+F12 - step debug primary Alice flow"
     }
 
+    It "AHK script binds F9 to primary flow using MAIN_MENU_INDEX" {
+        $MainAhk | Should -Match '\bF9::'
+        $MainAhk | Should -Match 'ReadSelectedTextByIndex\(MAIN_MENU_INDEX,\s*"F9 AppsKey menu item " MAIN_MENU_INDEX,\s*false\)'
+    }
+
     It "AHK script binds CtrlF11 to primary debug flow without step-debug flag" {
         $MainAhk | Should -Match "\^F11::"
-        $MainAhk | Should -Match "ReadSelectedTextByIndex\(MAIN_MENU_INDEX,\s*""CtrlF11 debug AppsKey menu item """
-        $MainAhk | Should -Match "CtrlF11 debug AppsKey menu item "" MAIN_MENU_INDEX,\s*false\)"
+        $MainAhk | Should -Match 'ReadSelectedTextByIndex\(MAIN_MENU_INDEX,\s*"CtrlF11 debug AppsKey menu item " MAIN_MENU_INDEX,\s*false\)'
     }
 
     It "AHK script binds CtrlF12 to step-debug primary flow" {
         $MainAhk | Should -Match "\^F12::"
-        $MainAhk | Should -Match "ReadSelectedTextByIndex\(MAIN_MENU_INDEX,\s*""CtrlF12 step debug AppsKey menu item """
-        $MainAhk | Should -Match "CtrlF12 step debug AppsKey menu item "" MAIN_MENU_INDEX,\s*true\)"
+        $MainAhk | Should -Match 'ReadSelectedTextByIndex\(MAIN_MENU_INDEX,\s*"CtrlF12 step debug AppsKey menu item " MAIN_MENU_INDEX,\s*true\)'
     }
 
     It "AHK script does not bind plain F11" {
@@ -166,7 +173,7 @@ Describe "Shared AHK library contract" {
         $CommonAhk | Should -Match "ConfirmStep"
     }
 
-    It "AHK shared library uses MsgBox for step-debug confirmation" {
+    It "AHK shared library uses MsgBox for step debug confirmation" {
         $CommonAhk | Should -Match "MsgBox"
     }
 
