@@ -90,6 +90,46 @@ function Select-LogLines {
     }
 }
 
+function Get-FileMetadata {
+    param(
+        [string]$Path
+    )
+
+    if (-not (Test-Path $Path)) {
+        Write-Output ("{0} not found" -f $Path)
+        return
+    }
+
+    $item = Get-Item $Path
+    $lineCount = (Get-Content $Path | Measure-Object -Line).Lines
+    $charCount = (Get-Content $Path -Raw).Length
+
+    [pscustomobject]@{
+        Path          = $item.FullName
+        SizeBytes     = $item.Length
+        LastWriteTime = $item.LastWriteTime
+        LineCount     = $lineCount
+        CharCount     = $charCount
+    } | Format-List | Out-String
+}
+
+function Get-FileContentWithLineNumbers {
+    param(
+        [string]$Path
+    )
+
+    if (-not (Test-Path $Path)) {
+        Write-Output ("{0} not found" -f $Path)
+        return
+    }
+
+    $lineNumber = 0
+    Get-Content $Path | ForEach-Object {
+        $lineNumber++
+        "{0:D4}: {1}" -f $lineNumber, $_
+    }
+}
+
 New-Item -ItemType Directory -Force -Path $ProjectContextDir | Out-Null
 
 if (Test-Path $OutputPath) {
@@ -98,12 +138,15 @@ if (Test-Path $OutputPath) {
 
 $timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss K'
 
+$ReadmePath = Join-Path $RepoRoot 'README.md'
 $MainAhkPath = Join-Path $RepoRoot 'scripts\yandex-alice-read-selected.ahk'
 $AliceCommonPath = Join-Path $RepoRoot 'scripts\lib\alice-common.ahk'
 $RunAhkPath = Join-Path $RepoRoot 'tools\run-ahk.ps1'
 $RunTestsPath = Join-Path $RepoRoot 'tools\run-tests.ps1'
 $RepoHealthPath = Join-Path $RepoRoot 'tools\check-repo-health.ps1'
 $ProjectTestsPath = Join-Path $RepoRoot 'tests\project.tests.ps1'
+$TestCasesPath = Join-Path $RepoRoot 'docs\test-cases.md'
+$NotesPath = Join-Path $RepoRoot 'docs\notes.md'
 $AhkRuntimeLogPath = Join-Path $RepoRoot 'logs\ahk-runtime.log'
 $ProjectLogPath = Join-Path $RepoRoot 'logs\project.log'
 $CollectProjectContextPath = Join-Path $RepoRoot 'tools\collect-project-context.ps1'
@@ -160,6 +203,10 @@ try {
         git log --oneline -n 10
     }
 
+    Add-Section 'GIT DIFF -- README.md' {
+        git diff -- $ReadmePath
+    }
+
     Add-Section 'GIT DIFF -- scripts/yandex-alice-read-selected.ahk' {
         git diff -- $MainAhkPath
     }
@@ -178,6 +225,50 @@ try {
 
     Add-Section 'GIT DIFF -- tests/project.tests.ps1' {
         git diff -- $ProjectTestsPath
+    }
+
+    Add-Section 'GIT DIFF -- docs/test-cases.md' {
+        git diff -- $TestCasesPath
+    }
+
+    Add-Section 'GIT DIFF -- docs/notes.md' {
+        git diff -- $NotesPath
+    }
+
+    Add-Section 'FILE METADATA -- README.md' {
+        Get-FileMetadata -Path $ReadmePath
+    }
+
+    Add-Section 'FILE METADATA -- scripts/yandex-alice-read-selected.ahk' {
+        Get-FileMetadata -Path $MainAhkPath
+    }
+
+    Add-Section 'FILE METADATA -- scripts/lib/alice-common.ahk' {
+        Get-FileMetadata -Path $AliceCommonPath
+    }
+
+    Add-Section 'FILE METADATA -- tools/run-ahk.ps1' {
+        Get-FileMetadata -Path $RunAhkPath
+    }
+
+    Add-Section 'FILE METADATA -- tools/collect-project-context.ps1' {
+        Get-FileMetadata -Path $CollectProjectContextPath
+    }
+
+    Add-Section 'FILE METADATA -- tests/project.tests.ps1' {
+        Get-FileMetadata -Path $ProjectTestsPath
+    }
+
+    Add-Section 'FILE METADATA -- docs/test-cases.md' {
+        Get-FileMetadata -Path $TestCasesPath
+    }
+
+    Add-Section 'FILE METADATA -- docs/notes.md' {
+        Get-FileMetadata -Path $NotesPath
+    }
+
+    Add-Section 'FILE CONTENT -- README.md' {
+        Get-Content $ReadmePath -Raw
     }
 
     Add-Section 'FILE CONTENT -- scripts/yandex-alice-read-selected.ahk' {
@@ -200,6 +291,18 @@ try {
         Get-Content $ProjectTestsPath -Raw
     }
 
+    Add-Section 'FILE CONTENT -- docs/test-cases.md' {
+        Get-Content $TestCasesPath -Raw
+    }
+
+    Add-Section 'FILE CONTENT -- docs/notes.md' {
+        Get-Content $NotesPath -Raw
+    }
+
+    Add-Section 'FILE CONTENT WITH LINE NUMBERS -- docs/test-cases.md' {
+        Get-FileContentWithLineNumbers -Path $TestCasesPath
+    }
+
     Add-Section 'LOG FILE -- logs/ahk-runtime.log (tail 200)' {
         Get-LogTailSafe -Path $AhkRuntimeLogPath -Tail 200
     }
@@ -211,8 +314,8 @@ try {
     Add-Section 'LOG FILTER -- F9/F11/F12 hotkeys and flow markers' {
         Select-LogLines -Path $AhkRuntimeLogPath -Tail 4000 -Patterns @(
             'Hotkey pressed F9',
-            'Hotkey pressed F11',
-            'Hotkey pressed F12',
+            'Hotkey pressed CtrlF11',
+            'Hotkey pressed CtrlF12',
             'FLOWSTART',
             'FLOWDONE',
             'FLOWCANCELLED',
@@ -222,24 +325,37 @@ try {
 
     Add-Section 'LOG FILTER -- debug contract markers' {
         Select-LogLines -Path $AhkRuntimeLogPath -Tail 4000 -Patterns @(
-            'debugfalse',
-            'debugtrue',
+            'TIMINGPROFILE',
             'contextMenuOpenDelayMs',
             'menuStepDelayMs',
-            'beforeEnterDelayMs'
+            'beforeEnterDelayMs',
+            'stepDebug='
         )
     }
 
     Add-Section 'LOG FILTER -- F12 step-debug markers' {
         Select-LogLines -Path $AhkRuntimeLogPath -Tail 4000 -Patterns @(
-            'Hotkey pressed F12',
-            'modeF12',
-            'FLOWSTART modeF12',
+            'Hotkey pressed CtrlF12',
+            'CtrlF12 step debug AppsKey menu item',
+            'FLOWSTART',
             'STEPSTART',
+            'STEPPROMPT',
+            'STEPCONFIRMED',
             'STEPDONE',
-            'FLOWDONE modeF12',
-            'FLOWCANCELLED modeF12',
-            'FLOWFAIL modeF12'
+            'FLOWDONE',
+            'FLOWCANCELLED',
+            'FLOWFAIL',
+            'replayall',
+            'replay-without-confirmations'
+        )
+    }
+
+    Add-Section 'LOG FILTER -- choosecurrentmenuitem and Enter markers' {
+        Select-LogLines -Path $AhkRuntimeLogPath -Tail 4000 -Patterns @(
+            'STEPSTART choosecurrentmenuitem',
+            'STEPDETAIL choosecurrentmenuitem',
+            'sentKey=Enter',
+            'STEPDONE choosecurrentmenuitem'
         )
     }
 
@@ -271,14 +387,17 @@ try {
         Write-Output 'Run AHK:'
         Write-Output 'powershell -ExecutionPolicy Bypass -File .\tools\run-ahk.ps1'
         Write-Output ''
+        Write-Output 'Collect context report:'
+        Write-Output 'powershell -ExecutionPolicy Bypass -File .\tools\collect-project-context.ps1'
+        Write-Output ''
         Write-Output 'Watch runtime log:'
         Write-Output 'Get-Content .\logs\ahk-runtime.log -Wait'
         Write-Output ''
         Write-Output 'Tail runtime log:'
         Write-Output 'Get-Content .\logs\ahk-runtime.log -Tail 50'
         Write-Output ''
-        Write-Output 'Expected F12 normal path: FLOW_DONE without FLOW_FAIL'
-        Write-Output 'Expected F12 cancel path: FLOW_CANCELLED without FLOW_FAIL'
+        Write-Output 'Expected F12 normal path: FLOWDONE without FLOWFAIL'
+        Write-Output 'Expected F12 cancel path: FLOWCANCELLED without FLOWFAIL'
     }
 }
 finally {
