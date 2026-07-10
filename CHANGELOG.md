@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Added repository-wide AI instruction files: `AGENTS.md`, `GEMINI.md`, `CLAUDE.md`, and `.github/copilot-instructions.md`.
+
+### Changed
+- Documented command safety rules for AI assistants, including explicit separation between commands intended to run now and commands shown only as future examples.
+- Clarified that release-related commands must not be suggested as immediate next steps until the repository state is checked and the current documentation work is complete.
+
 ## [0.2.0] - 2026-07-10
 
 ### Added
@@ -34,11 +41,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - PowerShell helpers:
   - `tools/run-ahk.ps1` to start the main AHK script;
   - `tools/run-tests.ps1` to run the project test suite.
-- Initial project structure description and manual smoke tests in `README.md` и `docs/test-cases.md`.
-
-### Added
-- Added repository-wide AI instruction files: `AGENTS.md`, `GEMINI.md`, `CLAUDE.md`, and `.github/copilot-instructions.md`.
-
-### Changed
-- Documented command safety rules for AI assistants, including explicit separation between commands intended to run now and commands shown only as future examples.
-- Clarified that release-related commands must not be suggested as immediate next steps until the repository state is checked and the current documentation work is complete.
+- Initial project structure description and manual smoke tests in `README.md` and `docs/test-cases.md`.
