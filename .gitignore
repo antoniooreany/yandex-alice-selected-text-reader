@@ -15,3 +15,21 @@ logs/*.log
 
 # AutoHotkey compiled / backup
 *.exe
+
+# Diagnostics and artifacts
+artifacts/
+artifacts/project-context/
+
+# Runtime logs
+logs/
+logs/*.log
+
+# Editor swap/backup files
+*.swp
+*.swo
+*~
+*.bak
+
+# OS-specific junk
+.DS_Store
+Thumbs.db
