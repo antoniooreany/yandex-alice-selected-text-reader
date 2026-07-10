@@ -302,3 +302,45 @@ Describe "Manual test cases document contract" {
         $TestCases | Should -Match "flowAttemptId"
     }
 }
+
+Describe "Local PowerShell workflow documentation contract" {
+    It "README mentions toolsrun-ahk.ps1 helper" {
+        $Readme | Should -Match "tools[\\/]+run-ahk\.ps1"
+    }
+
+    It "README mentions ahk-start helper" {
+        $Readme | Should -Match "ahk-start"
+    }
+
+    It "README mentions ahk-stop helper" {
+        $Readme | Should -Match "ahk-stop"
+    }
+
+    It "README mentions ahk-tail helper" {
+        $Readme | Should -Match "ahk-tail"
+    }
+
+    It "README mentions ahk-restart helper" {
+        $Readme | Should -Match "ahk-restart"
+    }
+
+    It "README mentions Get-Content wait log command" {
+        $Readme | Should -Match "Get-Content\s+\.\\logs\\ahk-runtime\.log\s+-Wait"
+    }
+
+    It "test cases mention toolsrun-ahk.ps1 helper" {
+        $TestCases | Should -Match "tools[\\/]+run-ahk\.ps1"
+    }
+
+    It "test cases mention ahk-start helper" {
+        $TestCases | Should -Match "ahk-start"
+    }
+
+    It "test cases mention ahk-stop helper" {
+        $TestCases | Should -Match "ahk-stop"
+    }
+
+    It "test cases mention Get-Content wait log command" {
+        $TestCases | Should -Match "Get-Content\s+\.\\logs\\ahk-runtime\.log\s+-Wait"
+    }
+}

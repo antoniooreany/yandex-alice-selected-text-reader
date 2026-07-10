@@ -160,6 +160,41 @@ powershell -ExecutionPolicy Bypass -File .\tools\run-ahk.ps1 -Wait
 
 The script launcher resolves the main AHK file from `scripts\yandex-alice-read-selected.ahk` and tries standard AutoHotkey v2 installation paths.
 
+## Local PowerShell helpers
+
+For local development, you can define a few short helper commands in your PowerShell profile so that starting, stopping, restarting, and tailing the AutoHotkey script is faster.
+
+Example helper functions:
+
+```powershell
+function ahk-start {
+    powershell -ExecutionPolicy Bypass -File .\tools\run-ahk.ps1
+}
+
+function ahk-stop {
+    Get-Process AutoHotkey -ErrorAction SilentlyContinue | Stop-Process -Force
+}
+
+function ahk-tail {
+    Get-Content .\logs\ahk-runtime.log -Wait
+}
+
+function ahk-restart {
+    ahk-stop
+    Start-Sleep -Milliseconds 300
+    ahk-start
+}
+```
+
+Suggested local workflow:
+
+1. Run `ahk-start` to launch the script through `tools\run-ahk.ps1`.
+2. Run `ahk-tail` to watch `Get-Content .\logs\ahk-runtime.log -Wait` in a second terminal.
+3. Use `ahk-stop` when you want to terminate the current AutoHotkey process.
+4. Use `ahk-restart` after changing the AHK script or related timing settings.
+
+These helpers are optional local shell conveniences. The stable project entry point for starting the script remains `tools\run-ahk.ps1`.
+
 ## Running tests
 
 Run the project test suite with:
@@ -215,7 +250,6 @@ Check that:
 ### The script runs but Alice action does not open
 
 Check:
-
 - `MAIN_MENU_INDEX` and `ALT_MENU_INDEX`;
 - browser context menu order;
 - timing values inside the AHK scripts, especially the delays used for:
